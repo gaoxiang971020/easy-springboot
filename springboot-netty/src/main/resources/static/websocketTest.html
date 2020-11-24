@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+</head>
+<body>
+<div id="app">
+<button @click="init">初始化连接</button>
+    <div>状态选择
+        <select name="action" v-model="action">
+        <option value="1">状态 1 初始化连接，用于登录</option>
+        <option value="2">状态 2 聊天消息</option>
+        <option value="3">状态 3 消息签收</option>
+        <option value="4">状态 4 保持心跳</option>
+        <option value="5">状态 5 拉取好友暂时不用</option>
+        </select>
+    </div>
+    <div>用户<input name="sendUserId" v-model="chatMsg.sendUserId"/></div>
+    <div>好友<input name="acceptUserId" v-model="chatMsg.acceptUserId"/></div>
+    <div>消息<input name="msg" v-model="chatMsg.msg"/></div>
+    <button @click="send">发消息</button>
+    <div>服务器显示</div>
+    <textarea v-model="responseText" style="width: 1024px;height: 300px; "></textarea>
+</div>
+<script type="text/javascript">
+    //     CONNECT(1, "第一次(或重连)初始化连接"),
+    //     CHAT(2, "聊天消息"),
+    //     SIGNED(3, "消息签收"),
+    //     KEEPALIVE(4, "客户端保持心跳"),
+    //     PULL_FRIEND(5, "拉取好友");
+
+    new Vue({
+        el: '#app',
+        data: {
+            path: "ws://localhost:8088/ws",
+            socket: "",
+            login: "",
+            action: "2",//状态
+            chatMsg: {
+                sendUserId: "10000",
+                acceptUserId: "10001",
+                msg: "你好"
+            },
+            responseText: ""
+        },
+        mounted() {
+            this.init();
+        },
+        methods: {
+            init: function () {
+                if (typeof (WebSocket) === "undefined") {
+                    alert("您的浏览器不支持socket")
+                } else {
+                    // 实例化socket
+                    this.socket = new WebSocket(this.path)
+                    // 监听socket连接
+                    this.socket.onopen = this.open
+                    // 监听socket错误信息
+                    this.socket.onerror = this.error
+                    // 监听socket消息
+                    this.socket.onmessage = this.getMessage
+                    this.socket.onclose = this.close
+
+                }
+            },
+            open: function () {
+                this.responseText = "socket连接成功" + "\r\n"
+                console.log("socket连接成功")
+            },
+            error: function () {
+                console.log("连接错误")
+            },
+            getMessage: function (e) {
+
+                let aaa = JSON.parse(e.data)
+                console.log(aaa.chatMsg)
+                this.responseText =this.responseText+"\r\n"+aaa.chatMsg.sendUserId+" : "+ aaa.chatMsg.msg;
+            },
+            send: function () {
+                let data = {
+                    action: this.action,
+                    chatMsg: this.chatMsg,
+                }
+                let stringify = JSON.stringify(data);
+                this.socket.send(stringify)
+            },
+            close: function () {
+                this.responseText = this.responseText + "\r\n" + "socket已经关闭"
+                console.log("socket已经关闭")
+            }
+        },
+        destroyed() {
+            // 销毁监听
+            this.socket.onclose = this.close
+        }
+    });
+</script>
+</body>
+</html>

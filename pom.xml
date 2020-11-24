@@ -19,6 +19,7 @@
 
     <modules>
         <module>springboot-hello</module>
+        <module>springboot-netty</module>
     </modules>
     <!--使用阿里镜像加速-->
     <repositories>
